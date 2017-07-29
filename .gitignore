@@ -1,5 +1,5 @@
 imageroot/20170709
 log_*
 image2/*.jpg
-config/camera.ini
+camera.ini
 action.todo

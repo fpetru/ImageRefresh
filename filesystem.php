@@ -127,8 +127,12 @@
     }
 
     function write_log($text) {
+        if (!file_exists('./logs')) {
+            mkdir('./logs', 0777, true);
+        }
+        
         $log  = date("F j, Y, g:i a"). ' - ' . $_SERVER['REMOTE_ADDR'].' - '. $text . PHP_EOL;
-        file_put_contents('./log_'.date("j.n.Y").'.txt', $log, FILE_APPEND);
+        file_put_contents('./logs/log_'.date("j.n.Y").'.txt', $log, FILE_APPEND);
     }
 
     function write_php_ini($array, $file) {
