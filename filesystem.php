@@ -1,28 +1,30 @@
 <?php
     /**
     * 
-    * Remove the full folder
+    * Remove the old images 
+    * This function should be called only after most recent file has been processed
     * 
-    * @param string $dir  input folder
     */
-    function rrmdir($dir) {
-        if (is_dir($dir)) {
-            $objects = scandir($dir);
-            foreach ($objects as $object) {
-                if ($object != "." && $object != "..") {
-                    if (filetype($dir."/".$object) == "dir") 
-                        rrmdir($dir."/".$object); 
-                    else 
-                        unlink ($dir."/".$object);
+   function remove_old_images($start_folder) {
+        $arrayExtensions = array("jpg", "jpeg");
+
+        if (file_exists($start_folder)) {
+            $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($start_folder), 
+                    RecursiveIteratorIterator::CHILD_FIRST);
+
+            foreach ($iterator as $fileinfo) {
+                if ($fileinfo->isFile()) {
+                    $fullfilename = $fileinfo->getPathname();
+                    $extension = (false === $pos = strrpos($fullfilename, '.')) ? '' : substr($fullfilename, $pos + 1);
+                    if (in_array($extension, $arrayExtensions)) {
+                        write_log(sprintf('Remove file found: %s', $fullfilename));
+                        unlink($fullfilename);
+                    }
                 }
             }
-            reset($objects);
-            rmdir($dir);
-        }
-
-        // if (!file_exists('imageroot')) {
-        //     mkdir('imageroot', 0777, false); }  
-    }
+        }        
+    }    
 
     function get_unique_access() {
         $has_access = false;    
@@ -92,6 +94,7 @@
                 if (resize_copy_image($mostRecentFilePath, $default_file_name, 800, 80)) {
                     $new_file = get_new_filename($default_file_name, $new_file_index);
                     if (copy($default_file_name, $new_file)) {
+                        write_log(sprintf('New file was processed: %s - Copied to: %s', $mostRecentFilePath, $new_file));
                         unlink($mostRecentFilePath);
                     }
                     else {
@@ -145,7 +148,7 @@
         {
             $startTime = microtime(TRUE);
             do {            
-                $canWrite = flock($fp, LOCK_EX);
+                $canWrite = flock($fp, LOCK_EX | LOCK_NB);
                 
                 // If lock not obtained sleep for 0 - 100 milliseconds, to avoid collision and CPU load
                 if (!$canWrite) 
@@ -214,7 +217,6 @@
                     $ini_array['last_modified'] = $move_result['modified_time'];
                     $file_display = $move_result['new_file'];
 
-                    // echo '<img src="'. $move_result['new_file']. '" width="800">'; 
                     write_php_ini($ini_array, "./config/camera.ini");
                 }
                 else
@@ -222,16 +224,14 @@
                     $file_display = $ini_array['camera_not_working'];
                     $status = 2; // could not find a recent file
                 }
+
+                remove_old_images($ini_array['camera_dump_folder']);                    
             }
             else {
                 $time_elapsed = $current_time - $ini_array['last_reading'];
                 $file_display = get_new_filename($ini_array['load_first'], $ini_array['last_index']);
                 $status = 1; // No file processing was made. It's an early request. We still display the last processed file.
             }
-
-            // TODO: ALLOW TO REMOVE FILES / FOLDERS        
-            // echo 'Remove all files'
-            // rrmdir("./imageroot");
 
             release_unique_access($access['lock']);
         }
