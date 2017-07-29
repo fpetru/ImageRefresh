@@ -68,6 +68,7 @@
         $mostRecentFilePath = "";
         $mostRecentFileMTime = $last_modified;
         $new_file = "";
+        $arrayExtensions = array("jpg", "jpeg");
 
         if (file_exists($start_folder)) {
             $iterator = new RecursiveIteratorIterator(
@@ -76,23 +77,30 @@
 
             foreach ($iterator as $fileinfo) {
                 if ($fileinfo->isFile()) {
-                    if ($fileinfo->getMTime() > $mostRecentFileMTime) {
-                        $mostRecentFileMTime = $fileinfo->getMTime();
-                        $mostRecentFilePath = $fileinfo->getPathname();
+                    $fullfilename = $fileinfo->getPathname();
+                    $extension = (false === $pos = strrpos($fullfilename, '.')) ? '' : substr($fullfilename, $pos + 1);
+                    if (in_array($extension, $arrayExtensions)) {
+                        if ($fileinfo->getMTime() > $mostRecentFileMTime) {
+                            $mostRecentFileMTime = $fileinfo->getMTime();
+                            $mostRecentFilePath = $fullfilename;
+                        }
                     }
                 }
             }
 
             if ($mostRecentFilePath <> "") {
-                // $resize_result = resize_image($mostRecentFilePath, $default_file_name, 800, 80); 
-                $resize_result = copy($mostRecentFilePath, $default_file_name);
-                write_log(sprintf('File found: %s is copied to: %s - Return status: %d', $mostRecentFilePath, $default_file_name, $resize_result));
-                $new_file = get_new_filename($default_file_name, $new_file_index);
-                // $resize_result = resize_image($mostRecentFilePath, $new_file, 800, 80); 
-                $resize_result = copy($mostRecentFilePath, $new_file);
-                write_log(sprintf('File found: %s is copied to: %s - Return status: %d', $mostRecentFilePath, $new_file, $resize_result));                
-                
-                unlink($mostRecentFilePath);
+                if (resize_copy_image($mostRecentFilePath, $default_file_name, 800, 80)) {
+                    $new_file = get_new_filename($default_file_name, $new_file_index);
+                    if (copy($default_file_name, $new_file)) {
+                        unlink($mostRecentFilePath);
+                    }
+                    else {
+                        write_log(sprintf('File found: %s - Failed to copy new index file: %s', $mostRecentFilePath, $new_file));
+                    }
+                }
+                else {
+                    write_log(sprintf('File found: %s - Failed to resize / copy to a new location: %s', $mostRecentFilePath, $default_file_name));
+                }
             }
 
             return array('success' => $mostRecentFilePath != "", 
@@ -102,6 +110,19 @@
         }        
     }
 
+    /**
+    * 
+    * Try first to resize - if not successful, just copy the file.
+    * 
+    */
+    function resize_copy_image($pic, $newpic, $setwidth, $quality = 80) {
+        $result = resize_image($pic, $newpic, $setwidth, $quality); 
+        if ($result === false)
+            $result = copy($pic, $newpic);
+        
+        return $result;
+    }
+
     function write_log($text) {
         $log  = date("F j, Y, g:i a"). ' - ' . $_SERVER['REMOTE_ADDR'].' - '. $text . PHP_EOL;
         file_put_contents('./log_'.date("j.n.Y").'.txt', $log, FILE_APPEND);
@@ -109,10 +130,8 @@
 
     function write_php_ini($array, $file) {
         $res = array();
-        foreach($array as $key => $val)
-        {
-            if(is_array($val))
-            {
+        foreach($array as $key => $val) {
+            if(is_array($val)) {
                 $res[] = "[$key]";
                 foreach($val as $skey => $sval) $res[] = "$skey = ".(is_numeric($sval) ? $sval : '"'.$sval.'"');
             }
@@ -125,17 +144,21 @@
         if ($fp = fopen($fileName, 'w'))
         {
             $startTime = microtime(TRUE);
-            do
-            {            $canWrite = flock($fp, LOCK_EX);
-            // If lock not obtained sleep for 0 - 100 milliseconds, to avoid collision and CPU load
-            if(!$canWrite) usleep(round(rand(0, 100)*1000));
-            } while ((!$canWrite)and((microtime(TRUE)-$startTime) < 5));
+            do {            
+                $canWrite = flock($fp, LOCK_EX);
+                
+                // If lock not obtained sleep for 0 - 100 milliseconds, to avoid collision and CPU load
+                if (!$canWrite) 
+                    usleep(round(rand(0, 100)*1000));
+            } while ((!$canWrite)
+                    and ((microtime(TRUE)-$startTime) < 5));
 
             //file was locked so now we can store information
-            if ($canWrite)
-            {            fwrite($fp, $dataToSave);
+            if ($canWrite) {            
+                fwrite($fp, $dataToSave);
                 flock($fp, LOCK_UN);
             }
+
             fclose($fp);
         }
     }
