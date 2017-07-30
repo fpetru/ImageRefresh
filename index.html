@@ -7,46 +7,13 @@
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
     </head>
     <body style="background-color: #FFFFFF">
-        Version <strong>0.1.2</strong>
+        Version <strong>0.1.3</strong>
         <br/>
         <image id="ximg_xo0" width="800" />
-        <p id="xpar"> 
-        <p id="refreshTime">     
-        <p id="fileName">     
-
         <script type="text/javascript">
-            if (!String.prototype.format) {
-                String.prototype.format = function() {
-                    var args = arguments;
-                    return this.replace(/{(\d+)}/g, function(match, number) { 
-                    return typeof args[number] != 'undefined'
-                        ? args[number]
-                        : match
-                    ;
-                    });
-                };
-            }
-
             function updatePage(data) {
                 console.log(data);    
                 document.getElementById("ximg_xo0").src = data['url'];
-                document.getElementById("xpar").innerHTML = getStatusText(data['status'], data['time_elapsed']);
-                document.getElementById("refreshTime").innerHTML = 'Refreshed at: {0}'.format(new Date().toLocaleString());
-                document.getElementById("fileName").innerHTML = 'Image displayed: {0}'.format(data['url']);
-            }
-
-            function getStatusText(statusValue, timeElapsed) {
-                var text = "";
-                switch(statusValue) {
-                    case 0: text = "Success ! New file was processed !"; break;
-                    case 1: text = 
-                       "No file processing was made, being an early request ({0} seconds since last check)".format(timeElapsed);
-                        break;
-                    case 2: text = "Could not find a more recent file"; break;
-                    case 3: text = "System error"; break;
-                    default: text = "Unknown error";
-                }     
-                return text;    
             }
 
             function checkServer() {
@@ -59,7 +26,7 @@
 
             window.onload = function() {
                 checkServer();                    
-                setInterval(checkServer, 5000);
+                setInterval(checkServer, 3000);
             }
         </script>
     </body>

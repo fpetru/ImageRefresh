@@ -1,7 +1,7 @@
 <?php
     /**
     * 
-    * Remove the old images 
+    * Remove all existent images 
     * This function should be called only after most recent file has been processed
     * 
     */
@@ -14,8 +14,8 @@
                     RecursiveIteratorIterator::CHILD_FIRST);
 
             foreach ($iterator as $fileinfo) {
+                $fullfilename = $fileinfo->getPathname();
                 if ($fileinfo->isFile()) {
-                    $fullfilename = $fileinfo->getPathname();
                     $extension = (false === $pos = strrpos($fullfilename, '.')) ? '' : substr($fullfilename, $pos + 1);
                     if (in_array($extension, $arrayExtensions)) {
                         write_log(sprintf('Remove file found: %s', $fullfilename));
@@ -116,11 +116,12 @@
     /**
     * 
     * Try first to resize - if not successful, just copy the file.
+    * Due to errors on the server, keep just copy
     * 
     */
     function resize_copy_image($pic, $newpic, $setwidth, $quality = 80) {
-        $result = resize_image($pic, $newpic, $setwidth, $quality); 
-        if ($result === false)
+        // $result = resize_image($pic, $newpic, $setwidth, $quality); 
+        // if ($result === false)
             $result = copy($pic, $newpic);
         
         return $result;
