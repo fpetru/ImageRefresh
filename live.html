@@ -8,9 +8,11 @@
     </head>
     <body style="background-color: #FFFFFF">
         <h1>Pensiunea &quot;La Trovanti&quot;</h1>
-        <h2><a href="http://www.cazare-horezu-pensiuni.ro/contact%20pret%20cazare.htm">Contact &amp; Cazare</a></h2>
+        <h2><a href="./../contact%20pret%20cazare.htm">Contact &amp; Cazare</a></h2>
         <br/>
         <image id="ximg_xo0" width="800" />
+        <br/>
+        <i>Refresh interval: 10 minutes</i>
         <script type="text/javascript">
             function updatePage(data) {
                 console.log(data);    
@@ -27,7 +29,7 @@
 
             window.onload = function() {
                 checkServer();                    
-                setInterval(checkServer, 3500 /* 3.5 seconds*/);
+                setInterval(checkServer, 30000 /* 30 seconds*/);
             }
         </script>
     </body>
